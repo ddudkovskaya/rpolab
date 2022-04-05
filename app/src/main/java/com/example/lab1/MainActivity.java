@@ -22,6 +22,13 @@ import com.example.lab1.databinding.ActivityMainBinding;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class MainActivity extends AppCompatActivity implements TransactionEvents {
@@ -50,9 +57,6 @@ public class MainActivity extends AppCompatActivity implements TransactionEvents
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == Activity.RESULT_OK) {
                             Intent data = result.getData();
-// обработка результата
-                           // String pin = data.getStringExtra("pin");
-                            //Toast.makeText(MainActivity.this, pin, Toast.LENGTH_SHORT).show();
 
                             pin = data.getStringExtra("pin");
                             synchronized (MainActivity.this) {
@@ -65,11 +69,6 @@ public class MainActivity extends AppCompatActivity implements TransactionEvents
 
         int res = initRng();
         byte[] v=randomBytes(10);
-
-        // Example of a call to a native method
-        // TextView tv = binding.sampleText;
-        // TextView tv = findViewById(R.id.sample_text);
-        //tv.setText(stringFromJNI());
 
         Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show();
     }
@@ -91,32 +90,9 @@ public class MainActivity extends AppCompatActivity implements TransactionEvents
 
     public void onButtonClick(View v)
     {
-       /* byte[] key = stringToHex("0123456789ABCDEF0123456789ABCDE0");
-        byte[] enc = encrypt(key, stringToHex("000000000000000102"));
-        byte[] dec = decrypt(key, enc);
-        String s = new String(Hex.encodeHex(dec)).toUpperCase();
-        Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); */
-
-      /*  Intent it = new Intent(this, PinpadActivity.class);
-        startActivity(it); */
-   //     Intent it = new Intent(this, PinpadActivity.class);
-
-    //    activityResultLauncher.launch(it);
-
-   /*     new Thread(()-> {
-            try {
-                byte[] trd = stringToHex("9F0206000000000100");
-                boolean ok = transaction(trd);
-                runOnUiThread(()-> {
-                    Toast.makeText(MainActivity.this, ok ? "ok" : "failed", Toast.LENGTH_SHORT).show();
-                });
-            } catch (Exception ex) {
-            // todo: log error
-            }
-        }).start(); */
-
-        byte[] trd = stringToHex("9F0206000000000100");
-        transaction(trd);
+      //  byte[] trd = stringToHex("9F0206000000000100");
+      //  transaction(trd);
+        testHttpClient();
     }
 
     private String pin;
@@ -142,6 +118,37 @@ public class MainActivity extends AppCompatActivity implements TransactionEvents
         runOnUiThread(()-> {
             Toast.makeText(MainActivity.this, result ? "ok" : "failed", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    protected void testHttpClient()
+    {
+        new Thread(() -> {
+            try {
+                HttpURLConnection uc = (HttpURLConnection)
+                        (new URL("http://10.0.2.2:8081/api/v1/title").openConnection());
+                InputStream inputStream = uc.getInputStream();
+                String html = IOUtils.toString(inputStream);
+                String title = getPageTitle(html);
+                runOnUiThread(() ->
+                {
+                    Toast.makeText(this, title, Toast.LENGTH_LONG).show();
+                });
+            } catch (Exception ex) {
+                Log.e("fapptag", "Http client fails", ex);
+            }
+        }).start();
+    }
+
+    protected String getPageTitle(String html)
+    {
+        Pattern pattern = Pattern.compile("<title>(.+?)</title>", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(html);
+        String p;
+        if (matcher.find())
+            p = matcher.group(1);
+        else
+            p = "Not found";
+        return p;
     }
 
     /**

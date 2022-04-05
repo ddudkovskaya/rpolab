@@ -35,9 +35,7 @@ public class PinpadActivity extends AppCompatActivity {
             tp.setText("Осталась одна попытка");
 
         ShuffleKeys();
-        /*findViewById(R.id.btnOK).setOnClickListener((View) -> {
-            finish();
-        }); */
+
         findViewById(R.id.btnOK).setOnClickListener((View) -> {
             Intent it = new Intent();
             it.putExtra("pin", pin);
